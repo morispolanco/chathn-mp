@@ -7,9 +7,14 @@ import {
 } from "ai";
 import { functions, runFunction } from "./functions";
 
-// Create an OpenAI API client (that's edge friendly!)
+// Create an OpenRouter API client (that's edge friendly!)
 const openai = new OpenAI({
   apiKey: process.env.OPENAI_API_KEY,
+  baseURL: "https://openrouter.ai/api/v1",
+  defaultHeaders: {
+    "HTTP-Referer": "http://localhost:3000",
+    "X-Title": "ChatHN"
+  }
 });
 
 export const runtime = "edge";
@@ -46,7 +51,7 @@ export async function POST(req: Request) {
 
   // check if the conversation requires a function call to be made
   const initialResponse = await openai.chat.completions.create({
-    model: "gpt-3.5-turbo-0613",
+    model: "meta-llama/llama-3.3-8b-instruct:free",
     messages,
     stream: true,
     functions,
@@ -61,7 +66,7 @@ export async function POST(req: Request) {
       const result = await runFunction(name, args);
       const newMessages = createFunctionCallMessages(result);
       return openai.chat.completions.create({
-        model: "gpt-3.5-turbo-0613",
+        model: "meta-llama/llama-3.3-8b-instruct:free",
         stream: true,
         messages: [...messages, ...newMessages],
       });
